@@ -11,11 +11,12 @@ before_script:
 - git config --global user.name "$(git --no-pager show --no-patch --format='%an')"
 - git config --global user.email "$(git --no-pager show --no-patch --format='%ae')"
 script:
-  - git clone -b master --depth 1 --quiet https://${GH_TOKEN}@github.com/cjeon/cjeon.github.com.git 
+  - git clone -b source --depth 1 --quiet https://${GH_TOKEN}@github.com/cjeon/cjeon.github.com.git 
   - bundle exec jekyll build
 after_success:
   - git add -A
   - git commit -m "Updated to $(git rev-parse --short $TRAVIS_COMMIT) at $(date -u +'%Y-%m-%d %H:%M:%S %Z')"
+  - git status
   - git push https://${GH_TOKEN}@github.com/cjeon/cjeon.github.com.git master --quiet
 
 branches:
