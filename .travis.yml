@@ -11,7 +11,7 @@ before_script:
 - git config --global user.name "$(git --no-pager show --no-patch --format='%an')"
 - git config --global user.email "$(git --no-pager show --no-patch --format='%ae')"
 script:
-  - git clone -b master --depth 1 --quiet https://${GH_TOKEN}@github.com/cjeon/cjeon.github.com.git _site
+  - git clone -b master --depth 1 --quiet https://${GH_TOKEN}@github.com/cjeon/cjeon.github.com.git 
   - rm -r _site/*
   - bundle exec rake spec
 after_success:
