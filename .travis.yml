@@ -4,16 +4,26 @@ cache: bundler
 rvm:
 - 2.2
 before_install:
-  - gem update --system
-  - gem update --remote bundler
+- gem update --system
+- gem update --remote bundler
+- gem update --remote bundler
 before_script:
- - chmod +x ./script/cibuild
+- git config --global user.name "$(git --no-pager show --no-patch --format='%an')"
+- git config --global user.email "$(git --no-pager show --no-patch --format='%ae')"
+script:
+  - git clone -b master --depth 1 --quiet https://${TOKEN}@github.com/cjeon/cjeon.github.com.git _site
+  - rm -r _site/*
+  - bundle exec rake spec
+after_success:
+  - cd _site
+  - git add -A
+  - git commit -m "Updated to $(git rev-parse --short $TRAVIS_COMMIT) at $(date -u +'%Y-%m-%d %H:%M:%S %Z')"
+  - git push https://${TOKEN}@github.com/cjeon/cjeon.github.com.git master --quiet
 
-script: ./script/cibuild
 branches:
   only:
-    - master
+  - source
 env:
   global:
   - NOKOGIRI_USE_SYSTEM_LIBRARIES=true
-
+  - secure: "ON/HNPjtlnVQn6SGsRuJKqoxIiLzYmu01Vb8n3g0RxnKKCx2k5kf2/nyRY/xi3sGk1LWIEeLfAogtXJrF1sZWUJRdAmbaS9dE0eXtI3NoDEdosMIIeDKmN8EhhUdpjJ8zF66/08bDC4ATxSMcT3ajE4LTsHDcDYp5SgOSV9T9HLUN8ymN+RAxUY8p0KYZ4A6rpRT8wZ6dqnhudrwl4SnbwzBg7OsgD0FffmgjWsD8vSrbGgLPHAOieyxd/YsMG/V/nR9sDxtkMk3MckokE3HdsalMh1Ktkh21ZQgcg0BnaYnX8EC65XQDGDYVUtrleTfWCiq2z6+Ty2NCHsdqAx/Cjmkx/qZB9/KDFfTYCSSlp23zakpi1w3XmwHvKpYo4392kCvoDdVGfL1XacTYSd1CjaCPzPJov2ifaJxVNgP7xAcqKIRhdQT47KJWej3gtKiVwEzR+B0e5qreTpUv0ifLa+KH7F9693W44ok2p/JDr4+F9NlaZ/Cv539kwRfs/lV0XvpkTRVIQIZDOare3z7TTb0GNUDP8CajvJW3ToBh/sJ9PSTU/rLsOcnaUIwPGmk/jLQrS3Fd64fKvg1UaWiaLuwAzR1nJ2RsEjL/yqsD5gXKHOvkKcM8bMQZ/Nc4Lss44nzG+6gpFZbVRBnSsZYb4GLqCShsB++mfLii0isQTA="
