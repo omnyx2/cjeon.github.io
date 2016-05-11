@@ -3,9 +3,9 @@ layout: post
 title: 지킬설정
 ---
 
-https://help.github.com/articles/using-jekyll-as-a-static-site-generator-with-github-pages/
-http://jekyllrb-ko.github.io/docs/continuous-integration/
-http://lacti.me/2014/06/23/blog-with-github-pages-and-jekyll/
-http://sleepycoders.blogspot.kr/2013/03/sharing-travis-ci-generated-files.html
+https://help.github.com/articles/using-jekyll-as-a-static-site-generator-with-github-pages/<br>
+http://jekyllrb-ko.github.io/docs/continuous-integration/<br>
+http://lacti.me/2014/06/23/blog-with-github-pages-and-jekyll/<br>
+http://sleepycoders.blogspot.kr/2013/03/sharing-travis-ci-generated-files.html<br>
 
 참고.
