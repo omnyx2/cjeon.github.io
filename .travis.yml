@@ -16,7 +16,8 @@ script:
 after_success:
   - git add -A
   - git commit -m "Updated to $(git rev-parse --short $TRAVIS_COMMIT) at $(date -u +'%Y-%m-%d %H:%M:%S %Z')"
-  - git push https://${GH_TOKEN}@github.com/cjeon/cjeon.github.com.git master --quiet
+  - git diff source..master
+  - git push https://${GH_TOKEN}@github.com/cjeon/cjeon.github.com.git master
 
 branches:
   only:
