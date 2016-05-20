@@ -64,4 +64,5 @@ upto:    1.500000   0.016667   1.516667 (  0.711239)
 # 3. 더 읽을만한 글
 1. <a>http://www.skorks.com/2010/03/timing-ruby-code-it-is-easy-with-benchmark/</a>  
 2. <a>http://stackoverflow.com/questions/1616269/ruby-benchmark-module-meanings-of-user-system-and-real</a>  
-3. <a>https://gist.github.com/anildigital/1229896</a>  
+3. <a>https://gist.github.com/anildigital/1229896</a>
+4. <a>http://greyblake.com/blog/2012/09/02/ruby-perfomance-tricks/</a>    
