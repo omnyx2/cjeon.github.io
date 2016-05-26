@@ -1,9 +1,10 @@
 require 'benchmark'
 require 'redis'
 
+bm = Benchmark
 redis = Redis.new(db: 1)
-KEYS = 100_000.times.collect { |i| "KEY#{i}" }
-#KEYS.each { |key| redis.zadd(key, 0, 'DATA') }
+KEYS = 1_000_000.times.collect { |i| "KEY#{i}" }
+# KEYS.each { |key| redis.zadd(key, 0, 'DATA') }
 
 script = "
 local sum = 0
@@ -12,59 +13,118 @@ for index, key in pairs(KEYS) do
 end
 return sum"
 
+def bm_add(bm1, bm2)
+  Benchmark::Tms.new(bm1.utime + bm2.utime,
+                     bm1.stime + bm2.stime,
+                     0,
+                     bm1.utime + bm2.utime + bm1.stime + bm2.stime,
+                     bm1.real + bm2.real,
+                     bm1.label)
+end
+#       #
+# ZCARD #
+#       #
 
-# # ZCARD 100_000 times
-# zcard = Benchmark.measure("zcard") do
-#   sum = 0
-#   KEYS.each do |key|
-#     sum += redis.zcard(key)
-#   end
-# end
-#
-# zcard_build_command = Benchmark::Tms.new
-# zcard_socket_write = Benchmark::Tms.new
-# zcard_socket_read = Benchmark::Tms.new
-# client = redis.client
-# client.send(:ensure_connected) do
-#   connection = client.connection
-#   socket = connection.instance_variable_get(:@sock)
-#   KEYS.map do |key|
-#     command = connection.build_command([:zcard, key])
-#     zcard_build_command += Benchmark.measure('zcard_build_command') do command = connection.build_command([:zcard, key]) end
-#     # Redis::Connection::Ruby
-#     socket.write(command)
-#     zcard_socket_write += Benchmark.measure('zcard_socket write') do socket.write(command) end # write to socket, 20% of execution time
-#     line = socket.gets
-#     zcard_socket_read += Benchmark.measure('zcard_socket read') do line = socket.gets end # read from socket, 80% of execution time
-#     reply_type = line.slice!(0, 1)
-#     connection.format_reply(reply_type, line)
-#   end.inject(:+)
-# end.tap { |res| puts "zcard result is #{res}"}
+result = 0
+zcard_client = Benchmark::Tms.new(0,0,0,0,0,:zcard_client)
+zcard_connection = Benchmark::Tms.new(0,0,0,0,0,:zcard_connection)
+zcard_get_socket = Benchmark::Tms.new(0,0,0,0,0,:zcard_get_socket)
+zcard_build_command = Benchmark::Tms.new(0,0,0,0,0,:zcard_build_command)
+zcard_socket_write = Benchmark::Tms.new(0,0,0,0,0,:zcard_socket_write)
+zcard_socket_get = Benchmark::Tms.new(0,0,0,0,0,:zcard_socket_get)
+zcard_reply_type = Benchmark::Tms.new(0,0,0,0,0,:zcard_reply_type)
+zcard_format_reply = Benchmark::Tms.new(0,0,0,0,0,:zcard_format_reply)
 
-# EVAL 1 times
-use_eval = Benchmark.measure("eval") { puts "eval result is #{redis.eval(script, KEYS)}" }
-eval_build_command = Benchmark::Tms.new
-eval_socket_write = Benchmark::Tms.new
-eval_socket_read = Benchmark::Tms.new
-puts("redis client", Benchmark.measure("redis client") {client = redis.client})
+zcard_client = bm_add(zcard_client, bm.measure(:client) {client = redis.client})
 client = redis.client
+written_commands = ""
+read_lines = ""
 client.send(:ensure_connected) do
-  puts "eval-connection", Benchmark.measure("eval-connection") { connection = client.connection }
-  connection = client.connection
-  puts "get socket", Benchmark.measure("get socket") { socket = connection.instance_variable_get(:@sock) }
-  socket = connection.instance_variable_get(:@sock)
-  eval_build_command += Benchmark.measure('eval_build_command') do command = connection.build_command([:eval, script, KEYS]) end
-  command = connection.build_command([:eval, script, KEYS])
-  eval_socket_write += Benchmark.measure('eval_socket write') do socket.write(command) end
-  socket.write(command)
-  eval_socket_read += Benchmark.measure('eval_socket read') do line = socket.gets end
-  line = socket.gets
-  reply_type = line.slice!(0, 1)
-  connection.format_reply(reply_type, line)
-  puts(connection.format_reply(reply_type, line).class)
+  connection = nil
+  zcard_connection = bm_add(zcard_connection, bm.measure(:connection) {connection = client.connection})
+
+  socket = nil
+  zcard_get_socket = bm_add zcard_get_socket, bm.measure {socket = connection.instance_variable_get(:@sock)}
+  KEYS.each do |key|
+    built_command = nil
+    zcard_build_command = bm_add zcard_build_command, bm.measure { built_command = connection.build_command([:zcard, key]) }
+    written_commands << built_command
+
+    zcard_socket_write = bm_add zcard_socket_write, bm.measure{socket.write(built_command)}
+
+    line = nil
+    zcard_socket_get = bm_add zcard_socket_get, bm.measure{line = socket.gets}
+    read_lines << line
+
+    reply_type = nil
+    zcard_reply_type = bm_add zcard_reply_type, bm.measure{reply_type = line.slice!(0, 1)}
+
+    reply = nil
+    zcard_format_reply = bm_add zcard_format_reply, bm.measure{reply = connection.format_reply(reply_type, line)}
+    result += reply
+  end
 end
 
-#puts('%-20s' % "zcard" + zcard.to_s,'%-20s' % "zcard_build_command" + zcard_build_command.to_s,
-#'%-20s' %"zcard_socket_write" + zcard_socket_write.to_s,'%-20s' % "zcard_socket_read" + zcard_socket_read.to_s)
-puts('%-20s' %"use_eval"+use_eval.to_s,'%-20s' % "eval_build_command"+eval_build_command.to_s,
-'%-20s' %"eval_socket_write" + eval_socket_write.to_s, '%-20s' %"eval_socket_read" + eval_socket_read.to_s)
+puts("----ZCARD----")
+[zcard_client,zcard_connection,zcard_get_socket,
+  zcard_build_command,zcard_socket_write,zcard_socket_get,
+  zcard_reply_type,zcard_format_reply].each do |bm|
+    puts(bm.format("%-20n %10.6u %10.6y %10.6t %10.6r\n"))
+  end
+puts("result is #{result}")
+puts("written commands in bytes : #{written_commands.bytesize}")
+puts("read lines in bytes       : #{read_lines.bytesize}")
+
+#      #
+# EVAL #
+#      #
+
+result = 0
+eval_client = Benchmark::Tms.new(0,0,0,0,0,:eval_client)
+eval_connection = Benchmark::Tms.new(0,0,0,0,0,:eval_connection)
+eval_get_socket = Benchmark::Tms.new(0,0,0,0,0,:eval_get_socket)
+eval_build_command = Benchmark::Tms.new(0,0,0,0,0,:eval_build_command)
+eval_socket_write = Benchmark::Tms.new(0,0,0,0,0,:eval_socket_write)
+eval_socket_get = Benchmark::Tms.new(0,0,0,0,0,:eval_socket_get)
+eval_reply_type = Benchmark::Tms.new(0,0,0,0,0,:eval_reply_type)
+eval_format_reply = Benchmark::Tms.new(0,0,0,0,0,:eval_format_reply)
+written_commands = ""
+read_lines = ""
+
+eval_client = bm_add(eval_client, bm.measure(:client) {client = redis.client})
+client = redis.client
+client.send(:ensure_connected) do
+  connection = nil
+  eval_connection = bm_add(eval_connection, bm.measure(:connection) {connection = client.connection})
+
+  socket = nil
+  eval_get_socket = bm_add eval_get_socket, bm.measure {socket = connection.instance_variable_get(:@sock)}
+
+
+  built_command = nil
+  eval_build_command = bm_add eval_build_command, bm.measure { built_command = connection.build_command([:eval, script, KEYS.length].concat KEYS) }
+  written_commands << built_command
+
+  eval_socket_write = bm_add eval_socket_write, bm.measure{socket.write(built_command)}
+
+  line = nil
+  eval_socket_get = bm_add eval_socket_get, bm.measure{line = socket.gets}
+  read_lines << line
+
+  reply_type = nil
+  eval_reply_type = bm_add eval_reply_type, bm.measure{reply_type = line.slice!(0, 1)}
+
+  reply = nil
+  eval_format_reply = bm_add eval_format_reply, bm.measure{reply = connection.format_reply(reply_type, line)}
+  result += reply
+end
+
+puts("----EVAL----")
+[eval_client,eval_connection,eval_get_socket,
+  eval_build_command,eval_socket_write,eval_socket_get,
+  eval_reply_type,eval_format_reply].each do |bm|
+    puts(bm.format("%-20n %10.6u %10.6y %10.6t %10.6r\n"))
+  end
+puts("result is #{result}")
+puts("written commands in bytes : #{written_commands.bytesize}")
+puts("read lines in bytes       : #{read_lines.bytesize}")
