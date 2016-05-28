@@ -24,5 +24,6 @@ kramdown:
   syntax_highlighter: rouge
 exclude: [vendor]
 paginate: 5
+paginate_path: "/blog/page:num/"
 gems:
   - jekyll-sitemap
