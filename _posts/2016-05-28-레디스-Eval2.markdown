@@ -1,0 +1,193 @@
+---
+layout: post
+title: Eval을 활용해 Redis 성능 개선하기 2
+tags: Redis, ruby, benchmark, test, 레디스, 루비, 벤치마크, 테스트
+published: true
+---
+[먼젓번 포스트](http://cjeon.github.io/2016/05/22/%EB%A0%88%EB%94%94%EC%8A%A4-Eval.html)에서 `Eval` 을 이용해 레디스의 성능을 향상시킬 수 있다는 이야기를 했습니다. 오늘 포스트에서는 먼젓번 포스트의 벤치마크를 이어가겠습니다.
+
+# 1. Redis-rb는 어떻게 command를 실행하나?
+`Eval`과 `Zcard`를 비교하려면 두 커맨드가 어떻게 다른지 알아야 합니다. 이를 위해서는 두 커맨드를 심층적으로 이해하는 게 필수적입니다. 제가 테스트한 redis-rb 라이브러리를 뜯어서 두 커맨드를 알아보았습니다. 복잡하지만, 간단히 추리면 두 커맨드는 다음 순서로 실행됩니다.
+
+1. 클라이언트와 커넥션 생성
+2. 명령어를 파싱
+3. 소켓에 파싱한 결과를 write
+4. 소켓에서 결과를 읽음
+5. 결과를 파싱
+
+이에 맞춰 benchmark를 explicit하게 작성했고, benchmark는 아래와 같습니다. 소스코드는 [여기]({{ site.url }}/sources/benchmark.rb)서 다운받으실 수 있습니다. (먼젓번 글과는 달리 차이를 명확하게 보기 위해 keys의 크기를 열 배로 늘렸습니다.)  
+
+``` ruby
+require 'benchmark'  
+require 'redis'  
+
+bm = Benchmark  
+redis = Redis.new(db: 1)  
+KEYS = 1_000_000.times.collect { |i| "KEY#{i}" }  
+KEYS.each { |key| redis.zadd(key, 0, 'DATA') }  
+
+script = "  
+local sum = 0  
+for index, key in pairs(KEYS) do  
+  sum = sum + redis.call('zcard', key);  
+end  
+return sum"  
+
+def bm_add(bm1, bm2)  
+  Benchmark::Tms.new(bm1.utime + bm2.utime,  
+                     bm1.stime + bm2.stime,  
+                     0,  
+                     bm1.utime + bm2.utime + bm1.stime + bm2.stime,  
+                     bm1.real + bm2.real,  
+                     bm1.label)  
+end  
+
+#       #  
+# ZCARD #  
+#       #  
+
+result = 0  
+zcard_client = Benchmark::Tms.new(0,0,0,0,0,:zcard_client)  
+zcard_connection = Benchmark::Tms.new(0,0,0,0,0,:zcard_connection)  
+zcard_get_socket = Benchmark::Tms.new(0,0,0,0,0,:zcard_get_socket)  
+zcard_build_command = Benchmark::Tms.new(0,0,0,0,0,:zcard_build_command)  
+zcard_socket_write = Benchmark::Tms.new(0,0,0,0,0,:zcard_socket_write)  
+zcard_socket_get = Benchmark::Tms.new(0,0,0,0,0,:zcard_socket_get)  
+zcard_reply_type = Benchmark::Tms.new(0,0,0,0,0,:zcard_reply_type)  
+zcard_format_reply = Benchmark::Tms.new(0,0,0,0,0,:zcard_format_reply)  
+
+zcard_client = bm_add(zcard_client, bm.measure(:client) {client = redis.client})  
+client = redis.client  
+written_commands = ""  
+read_lines = ""  
+client.send(:ensure_connected) do  
+  KEYS.each do |key|  
+    connection = nil  
+    zcard_connection = bm_add(zcard_connection, bm.measure(:connection) {connection = client.connection})  
+
+    socket = nil  
+    zcard_get_socket = bm_add zcard_get_socket, bm.measure {socket = connection.instance_variable_get(:@sock)}  
+
+    built_command = nil  
+    zcard_build_command = bm_add zcard_build_command, bm.measure { built_command = connection.build_command([:zcard, key]) }  
+    written_commands << built_command  
+
+    zcard_socket_write = bm_add zcard_socket_write, bm.measure{socket.write(built_command)}  
+
+    line = nil  
+    zcard_socket_get = bm_add zcard_socket_get, bm.measure{line = socket.gets}  
+    read_lines << line  
+
+    reply_type = nil  
+    zcard_reply_type = bm_add zcard_reply_type, bm.measure{reply_type = line.slice!(0, 1)}  
+
+    reply = nil  
+    zcard_format_reply = bm_add zcard_format_reply, bm.measure{reply = connection.format_reply(reply_type, line)}  
+    result += reply  
+  end  
+end  
+
+puts("----ZCARD----")  
+[zcard_client,zcard_connection,zcard_get_socket,  
+  zcard_build_command,zcard_socket_write,zcard_socket_get,  
+  zcard_reply_type,zcard_format_reply].each do |bm|  
+    puts(bm.format("%-20n %10.6u %10.6y %10.6t %10.6r\n"))  
+  end  
+puts("result is #{result}")  
+puts("written commands in bytes : #{written_commands.bytesize}")  
+puts("read lines in bytes       : #{read_lines.bytesize}")  
+
+#      #  
+# EVAL #  
+#      #  
+
+result = 0  
+eval_client = Benchmark::Tms.new(0,0,0,0,0,:eval_client)  
+eval_connection = Benchmark::Tms.new(0,0,0,0,0,:eval_connection)  
+eval_get_socket = Benchmark::Tms.new(0,0,0,0,0,:eval_get_socket)  
+eval_build_command = Benchmark::Tms.new(0,0,0,0,0,:eval_build_command)  
+eval_socket_write = Benchmark::Tms.new(0,0,0,0,0,:eval_socket_write)  
+eval_socket_get = Benchmark::Tms.new(0,0,0,0,0,:eval_socket_get)  
+eval_reply_type = Benchmark::Tms.new(0,0,0,0,0,:eval_reply_type)  
+eval_format_reply = Benchmark::Tms.new(0,0,0,0,0,:eval_format_reply)  
+written_commands = ""  
+read_lines = ""  
+
+eval_client = bm_add(eval_client, bm.measure(:client) {client = redis.client})  
+client = redis.client  
+client.send(:ensure_connected) do  
+  connection = nil  
+  eval_connection = bm_add(eval_connection, bm.measure(:connection) {connection = client.connection})  
+
+  socket = nil  
+  eval_get_socket = bm_add eval_get_socket, bm.measure {socket = connection.instance_variable_get(:@sock)}  
+
+  built_command = nil  
+  eval_build_command = bm_add eval_build_command, bm.measure { built_command = connection.build_command([:eval, script, KEYS.length].concat KEYS) }  
+  written_commands << built_command  
+
+  eval_socket_write = bm_add eval_socket_write, bm.measure{socket.write(built_command)}  
+
+  line = nil  
+  eval_socket_get = bm_add eval_socket_get, bm.measure{line = socket.gets}  
+  read_lines << line  
+
+  reply_type = nil  
+  eval_reply_type = bm_add eval_reply_type, bm.measure{reply_type = line.slice!(0, 1)}  
+
+  reply = nil  
+  eval_format_reply = bm_add eval_format_reply, bm.measure{reply = connection.format_reply(reply_type, line)}  
+  result += reply  
+end  
+
+puts("\n----EVAL----")  
+[eval_client,eval_connection,eval_get_socket,  
+  eval_build_command,eval_socket_write,eval_socket_get,  
+  eval_reply_type,eval_format_reply].each do |bm|  
+    puts(bm.format("%-20n %10.6u %10.6y %10.6t %10.6r\n"))  
+  end  
+puts("result is #{result}")  
+puts("written commands in bytes : #{written_commands.bytesize}")  
+puts("read lines in bytes       : #{read_lines.bytesize}")  
+```
+
+결과는 아래와 같았습니다.
+
+```
+----ZCARD----
+zcard_client           0.000000   0.000000   0.000000 (  0.000005)
+zcard_connection       1.240000   0.400000   3.280000 (  1.664717)
+zcard_get_socket       0.990000   0.440000   2.860000 (  1.759870)
+zcard_build_command    7.440000   0.770000  16.420000 (  8.429204)
+zcard_socket_write    32.130000  52.410000 169.080000 ( 78.333466)
+zcard_socket_get      11.370000   5.980000  34.700000 ( 19.042166)
+zcard_reply_type       2.040000   0.610000   5.300000 (  2.219305)
+zcard_format_reply     2.720000   0.580000   6.600000 (  3.064350)
+result is 1000000
+written commands in bytes : 29888890
+read lines in bytes       : 4000000
+----EVAL----
+eval_client            0.000000   0.000000   0.000000 (  0.000005)
+eval_connection        0.000000   0.000000   0.000000 (  0.000004)
+eval_get_socket        0.000000   0.000000   0.000000 (  0.000004)
+eval_build_command     0.980000   0.120000   2.200000 (  1.133657)
+eval_socket_write      0.000000   0.010000   0.020000 (  0.272809)
+eval_socket_get        0.000000   0.000000   0.000000 (  1.217282)
+eval_reply_type        0.000000   0.000000   0.000000 (  0.000002)
+eval_format_reply      0.000000   0.000000   0.000000 (  0.000006)
+result is 1000000
+written commands in bytes : 14889033
+read lines in bytes       : 10
+```
+4개의 숫자는 순서대로 유저, 시스템, 토털, 리얼 타임을 나타냅니다. 간단히 리얼타임만 봅시다.  
+백만 번 반복된 건 대체로 차이가 큰 편입니다. 대부분 백만 배에서 오십만 배정도 늘어났습니다. 하지만 다른 operation들은 백만 배~오십만 배 늘어봐야 1초 내외가 증가한 반면 socket_write의 경우 백만 배까지 는 건 아니지만 80초 가까이 시간을 소요했습니다. socket_get도 마찬가지입니다. 20초 가까이 시간을 끌었네요. 시스템까지 보면 소요된 시간 역시 write은 user보다 system(kernel)이 시간을 많이 썼고, get은 system이 user의 반 정도의 시간을 사용했습니다.  
+
+written, read bytes 수도 큰 차이를 보입니다. 쓸 때 커맨드에 헤더와 푸터가 붙고, 읽어올 때 커맨드에서 헤더를 떼고 읽기 때문에 용량에 차이가 나는 것으로 보입니다.  
+
+# 2. 결론
+내릴 수 있는 결론은 다음과 같습니다.
+
+1. Eval을 사용하면 써야하는 커맨드의 용량이 줄어든다 (29,888,890 bytes -> 14,889,033 bytes)
+2. Network Latency 뿐만 아니라 file i/o latency도 유의미하게 줄어든다.
+
+하지만 처음에 말씀드렸던 것처럼 eval을 사용하실 때는 꼭 주의하셔야 합니다. production에서는 위 eval script가 redis를 2.5초 동안 얼려놓기 때문에 결코 좋지 않을 수 있습니다.
