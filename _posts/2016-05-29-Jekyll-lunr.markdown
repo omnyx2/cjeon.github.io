@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Jekyll에 lunr.js 붙이기
+title: Jekyll에 lunr.js 붙이기 (+ 한국어 검색 문제 해결)
 ---
 Jekyll에 lunr.js를 붙였습니다. [Jekyll Tips](http://jekyll.tips/jekyll-casts/jekyll-search-using-lunr-js/)의 자료를 따라서 했는데, 영어로 쿼리하면 결과가 잘 나오는 반면 한국어로 쿼리하면 결과가 하나도 나오지 않더군요.  
 
