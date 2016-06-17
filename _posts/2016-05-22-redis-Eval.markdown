@@ -136,9 +136,9 @@ user     system      total        real
 ## 4. 왜 eval이 더 빠를까?
 Network latency는 없고, 데이터 양도 같습니다. Redis server는 오직 테스트를 위해서만 띄웠기 때문에 외부 쿼리 변수도 없습니다. (network latency와 외부 쿼리 변수가 끼기 시작하면 차이가 훨씬 커지겠죠?) 그런데 왜 무려 50배나 빠른 걸까요?  
 
-이는 다음 포스트에서 살펴보겠습니다. 글이 너무 길어져서요.
+이는 다음 포스트에서 살펴보겠습니다.
 
-[다음 포스트 보기](http://cjeon.github.io/2016/05/28/%EB%A0%88%EB%94%94%EC%8A%A4-Eval2.html)
+[다음 포스트 보기]({% post_url 2016-05-28-redis-Eval2 %})
 
 # 5. 더 읽을 거리
 [Redis](http://redis.io/)  
