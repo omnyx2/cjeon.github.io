@@ -33,7 +33,7 @@ body {
 p, blockquote, pre,
 ul, ol, dl, figure,
 %vertical-rhythm {
-    margin-bottom: $spacing-unit / 2;
+    margin-top: $spacing-unit / 2;
 }
 
 
@@ -65,7 +65,7 @@ figcaption {
  * Lists
  */
 ul, ol {
-    margin-left: $spacing-unit;
+    margin-left: 1.5 * $spacing-unit;
 }
 
 li {
@@ -80,8 +80,17 @@ li {
 /**
  * Headings
  */
+
+.post-header {
+  border-bottom: 1px solid #C7C7C7;
+  padding-bottom: 5px;
+}
+
 h1, h2, h3, h4, h5, h6 {
+    margin-top: $spacing-unit;
     font-weight: $base-font-weight;
+    border-bottom: 1px solid #C7C7C7;
+    padding-bottom: 5px;
 }
 
 
@@ -114,7 +123,6 @@ blockquote {
     padding-left: $spacing-unit / 2;
     font-size: 18px;
     letter-spacing: -1px;
-    font-style: italic;
 
     > :last-child {
         margin-bottom: 0;
@@ -202,4 +210,28 @@ pre {
             fill: $grey-color;
         }
     }
+}
+
+// examples
+.example{
+  border-left: 4px solid;
+  border-color: Aquamarine;
+  padding-left: 15px;
+
+  > h4 {
+    margin-top: $spacing-unit;
+    font-weight: $base-font-weight;
+    border-bottom: none;
+    padding-bottom: 0px;
+  }
+
+  > ol {
+    margin-left: 18px;
+  }
+}
+
+// tables
+table {
+    @extend %table;
+    @extend %table-bordered;
 }
