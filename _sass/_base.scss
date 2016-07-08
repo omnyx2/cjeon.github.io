@@ -82,13 +82,15 @@ li {
  */
 
 .post-header {
-  border-bottom: 1px solid #C7C7C7;
+  border-bottom: 2px solid #CCCCCC;
   padding-bottom: 5px;
+  margin-bottom: $spacing-unit;
 }
 
 h1, h2, h3, h4, h5, h6 {
     margin-top: $spacing-unit;
     font-weight: $base-font-weight;
+    color: $heading-text-color;
     border-bottom: 1px solid #C7C7C7;
     padding-bottom: 5px;
 }
@@ -234,4 +236,9 @@ pre {
 table {
     @extend %table;
     @extend %table-bordered;
+}
+
+//hr
+hr {
+  color: #C7C7C7;
 }

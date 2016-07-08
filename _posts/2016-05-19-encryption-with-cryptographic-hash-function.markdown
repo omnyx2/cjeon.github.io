@@ -6,30 +6,30 @@ tags: ruby, 암호화, data encryption
 
 개발을 하다보면 민감한 정보를 암호화해서 저장해야할 때가 있습니다. 대표적으로 비밀번호, 전화번호 등을 들 수 있습니다. 이런 민감한 정보는 보통 두 종류로 나뉩니다. **복호화 할 필요가 있는** 정보와 **복호화가 되면 안되는** 정보입니다. 전자의 예는 전화번호를 들 수 있고 (유저에게 전화를 할 수도 있으니까요) 후자의 예로는 비밀번호를 들 수 있습니다. 오늘 글에서는 후자를 중점적으로 다뤄보겠습니다. <br>
 
-### 0. 반드시 명심해야 할 점<br>
+## 0. 반드시 명심해야 할 점<br>
 글을 시작하기 전에, 한 가지를 분명히 하고 싶습니다. **절대 직접 만든 해싱 알고리즘을 사용하지 마세요.** 물론 이 글을 읽고계시는 분이 암호학의 최전선에서 학계를 이끌어나가고 있는 분이라면 말이 다르겠지만, 가능하면 이미 만들어진 알고리즘을 사용하는 걸 권장합니다. 제 글에서도 이미 만들어진 알고리즘을 사용해 데이터를 암호화하는 방법을 소개합니다.<br>
 
 > If you are thinking of writing your own password hashing code, **please don't!**. It's too easy to screw up. No, that cryptography course you took in university doesn't make you exempt from this warning. This applies to everyone: **DO NOT WRITE YOUR OWN CRYPTO! The problem of storing passwords has already been solved.**  
 > -crackstation.net
 
-### 1. 개론<br>
+## 1. 개론<br>
 잘 만들어진 라이브러리를 사용하면 복호화 불가능하게 암호화하는 것은 꽤나 간단합니다. 아래의 4단계를 따르시면 됩니다.<br>
 1. 데이터를 준비한다.   
 2. salt를 만든다.  
 3. 데이터+salt를 암호화한다.  
 4. 3단계의 결과와 salt를 둘 다 저장한다.  
 
-### 2. 실행<br>
+## 2. 실행<br>
 
-#### 1. 데이터 준비<br>
-테스트용으로 "아주 중요한 비밀번호!!"를 암호화해보겠습니다. 
+### 1. 데이터 준비<br>
+테스트용으로 "아주 중요한 비밀번호!!"를 암호화해보겠습니다.
 
 ``` ruby
 password = "아주 중요한 비밀번호!!"
 => "아주 중요한 비밀번호!!"
 ```
 
-#### 2. salt 생성<br>
+### 2. salt 생성<br>
 Salt는 데이터를 암호화하기 전에 데이터에 추가해주는 **임의의 값**(항상 새로 만들어져야하며, 재사용되어선 안됩니다)입니다. 그냥 암호화하면 될 것 같은데 왜 굳이 salt를 추가해야할까요? 바로 Salt가 데이터를 공격하는 많은 방법을 효과적으로 방어해주기 때문입니다. 데이터를 공격하는 방법은 [이 글](https://crackstation.net/hashing-security.htm)에 잘 정리되어 있습니다. <br>
 그럼 salt는 어떻게 만들까요? salt를 만들 때는 두 가지 원칙만 지키면 됩니다.<br><br>
 1. Cryptographically Secure Pseudo-Random Number Generator (CSPRNG)을 이용해서 salt를 생성한다.  
@@ -54,7 +54,7 @@ SecureRandom.base64(10)
 ```
 매번 실행할 때마다 값이 달라지기 때문에, 한번 만든 salt를 잃어버리지 않도록 각별히 주의해야 합니다.<br>
 
-#### 4. 데이터+salt 암호화<br>
+### 4. 데이터+salt 암호화<br>
 이제 데이터와 salt를 합친 후, 이 데이터를 암호화합니다. 먼저 데이터와 salt를 합칩시다.  
 
 ``` ruby
@@ -75,7 +75,7 @@ password = Digest::SHA512.hexdigest password
 5만번 반복해도 시간이 별로 오래 걸리지 않습니다. (0.1초 내외입니다.)  
 
 ``` ruby
-50000.times do 
+50000.times do
   password = Digest::SHA512.hexdigest password
 end
 =>50000
@@ -84,10 +84,10 @@ password
 ```
 이제 password가 random salt와 SHA2-512 알고리즘을 이용해 암호화되었습니다. 이제 저장만 마치면 끝입니다.  
 
-#### 5. 저장하기
+### 5. 저장하기
 저장은 한 가지만 명심하시면 됩니다. **salt도 저장하셔야 합니다.** 이후에 데이터를 비교할 때 위에서 사용한 방법과 정확히 같은 방법을 사용해야 똑같은 결과가 나오는데, salt는 random하게 만들어졌기 때문에 복구가 불가능하기 때문입니다. salt와 password 값을 안전하게 저장합시다.  
 
-#### 6. 비교하기
+### 6. 비교하기
 이후에 암호화한 값을 사용해야할 때는 어떻게 해야 할까요? 위의 단계를 조금 간소화해서 비슷하게 따라가시면 됩니다. 예를 들어 유저가 로그인을 하려하고, 비밀번호가 DB에 저장된 비밀번호와 일치하는지 비교해야한다고 생각해봅시다.<br>   
 
 1. 유저가 비밀번호를 입력함  
@@ -113,7 +113,7 @@ user_input == password # password는 위에서 만든 값이고, DB에서 가져
 ```
 이렇게하면 모든 과정이 끝납니다. 수고하셨습니다.  
 
-#### 7. 더 읽을 거리
+### 7. 더 읽을 거리
 
 [FIPS PUBLICATIONS](http://csrc.nist.gov/publications/PubsFIPS.html)<br>
 [Ruby Digest Document](http://ruby-doc.org/stdlib-2.1.0/libdoc/digest/rdoc/Digest.html)

@@ -6,7 +6,7 @@ Jekyll에 lunr.js를 붙였습니다. [Jekyll Tips](http://jekyll.tips/jekyll-ca
 
 저는 아래와 같은 간단한 처리를 해준 결과 검색 결과가 잘 나오네요.
 
-# 1. js charset 설정
+## 1. js charset 설정
 
 search.html에서 js를 임포트 할 때 처음에는 아래와 같이 적혀있습니다.
 
@@ -22,7 +22,7 @@ search.html에서 js를 임포트 할 때 처음에는 아래와 같이 적혀�
 <script src="/js/search.js" charset="utf-8"></script>
 ```
 
-# 2. Lunr.js 검색시 stemmer 등 제거
+## 2. Lunr.js 검색시 stemmer 등 제거
 
 lunr.js는 non-english word를 filter합니다. 그래서 문장부호, 한국어 등이 filter되는데요, 이를 피하기 위해서는 stemmer, stop word filter 등을 제거해줄 필요가 있습니다. (한국어용 stemmer, stop word filter를 사용하셔도 됩니다.)   
 

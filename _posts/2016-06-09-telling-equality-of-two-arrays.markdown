@@ -12,9 +12,9 @@ title: Array 비교 알고리즘 Time complexity 정리
 2. 두 Array에 담긴 elements는 같은 class의 다른 elements와 같은지 비교가 가능해야한다.  
 3. 이외에 두 Array의 elements에 대한 어떤 전제도 하지 않는다. (`Int`일 수도 있고, `custom object`일 수도 있고..)
 
-1번 전제는 당연합니다. Array가 같은 elements를 포함하고 있는지 확인하려면 array에 포함된 어떤 element가 다른 element와 같은지 비교할 수 있어야 하기 때문입니다. (두 array가 참조하는 address가 같으면 이럴 필요도 없겠지만 이 경우는 포스트 주제 밖에 있죠.)  
+2번 전제는 당연합니다. Array가 같은 elements를 포함하고 있는지 확인하려면 array에 포함된 어떤 element가 다른 element와 같은지 비교할 수 있어야 하기 때문입니다. (두 array가 참조하는 address가 같으면 이럴 필요도 없겠지만 이 경우는 포스트 주제 밖에 있죠.)  
 
-2번 전제는 조금 특수한데, 데이터에 대한 쓸모있는 정보가 있다면 문제에 대한 답이 너무 많기 때문에 전제를 걸어서 일반적인 답을 찾고자 했습니다.
+3번 전제는 조금 특수한데, 데이터에 대한 쓸모있는 정보가 있다면 문제에 대한 답이 너무 많기 때문에 전제를 걸어서 일반적인 답을 찾고자 했습니다.
 
 일단 기본적으로 최소 worst-case 시간 복잡도는 `O(n)`입니다. (여기서 n은 array의 size입니다.)  
 

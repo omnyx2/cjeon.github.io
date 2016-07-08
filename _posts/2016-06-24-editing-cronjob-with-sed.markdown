@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Sed 활용해서 cronjob 쉽게 edit하기.
+title: Sed 활용해서 cronjob 쉽게 edit하기
 ---
 DB서버를 대대적으로 점검할 일이 있어서, DB가 한시적으로 작동을 중지해야하는 일이 있었습니다. 점검공지를 걸고 클라이언트 접속을 막고, 혹시 있을 문제를 대비해 영향을 받는 시간대에 실행되는 cronjob들도 다 주석처리를 하기로 했죠.  
 
@@ -8,7 +8,7 @@ DB서버를 대대적으로 점검할 일이 있어서, DB가 한시적으로 �
 
 다행히 프로그래밍을 할 줄 아니까, `sed`라는 명령어를 사용해보기로 합니다.  
 
-# grep으로 패턴과 일치하는 line 추출하기  
+## grep으로 패턴과 일치하는 line 추출하기  
 다음은 제가 임시로 만든 cronjob들입니다.  
 
 ```
@@ -85,7 +85,7 @@ cat test_cron.txt | grep '^.* [2-5] .*$'
 ```  
 꽤 잘 나왔습니다. 이 정보만 가지고 수동으로 주석처리를 해도 되겠지만, 영 귀찮으니 regex로 capture한 정보를 sed를 이용해서 자동으로 주석처리해봅시다.  
 
-# sed 소개  
+## sed 소개  
 [SED](https://www.gnu.org/software/sed/manual/sed.html)는 Stream Editor의 준말로, Unix utility 중 하나입니다. Text를 파싱한 뒤 바꾸는 데 흔히 사용되며, 오늘은 Text file안에서 regex에 매칭되는 라인을 바꾸는 데 사용할 겁니다.  
 
 sed의 기초 문법은 다음과 같습니다.  
@@ -106,7 +106,7 @@ g옵션을 넣으면 명령어는 다음과 같이 바뀌고,
 
 하지만 cronjob을 잠깐 주석처리 했다가 주석을 다시 없앨 것이기 때문에 `-i` 옵션은 사용하지 않을 예정입니다.  
 
-# sed 활용
+## sed 활용
 sed는 일반 regex를 쓰는 것 처럼 쓰면 되지만, regex를 쓸 때 조금 주의해야 합니다. 일반적으로 regex에서 capture는 `()`로 하는데 이를 `\(\)`로 해야한다는 점, 또 그냥 whitespace는 인식이 안되어서 `[[:space:]]`로 표기해줘야 한다는 점이 좀 다릅니다.  
 이런 규칙을 유념하고, sed 명령어를 차근차근 만들어보겠습니다. 필요한 규칙은 다음과 같습니다.  
 
@@ -189,7 +189,7 @@ sed는 일반 regex를 쓰는 것 처럼 쓰면 되지만, regex를 쓸 때 조�
 23 23 * * * (some job)
 ```
 
-# 더 읽을거리
+## 더 읽을거리
 1. [Bruce Barnett의 sed manual](http://www.grymoire.com/Unix/Sed.html#uh-3)  
 2. [GNU.org의 sed manual](https://www.gnu.org/software/sed/manual/sed.html)  
 3. [위키피디아 파이프라인](https://en.wikipedia.org/wiki/Pipeline_(Unix))  

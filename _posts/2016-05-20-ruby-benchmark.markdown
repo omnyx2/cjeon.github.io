@@ -5,7 +5,7 @@ tags: ruby, benchmark, test, 루비, 벤치마크, 테스트
 ---
 실제로 돌아가는 코드를 짜다보면, 코드의 성능을 단순히 elegance나 O(n)으로만 설명하기는 힘듭니다. 가장 절대적인 기준은 아마도 코드가 **실제로 돌아가는 시간** 과 **실제로 사용하는 메모리 용량** 일텐데요. 보통은 메모리 사용량보다 시간이 얼마나 걸리는 지가 중요하게 생각됩니다. 오늘 글에서는 **Ruby에서 벤치마크 하기** 를 간단하게 다뤄보겠습니다.
 
-# 1. 가장 간단한 벤치마크
+## 1. 가장 간단한 벤치마크
 아마 가장 간단한 벤치마크는 `Time.now`를 이용한 벤치마크 일겁니다. 저도 간단한 벤치마크를 할 때는 이 방법을 주로 사용합니다.
 
 ``` ruby
@@ -19,7 +19,7 @@ time_taken = end_time - start_time
 
 이런 문제를 해결하기 위해 [Ruby Benchmark Module](http://ruby-doc.org/stdlib-2.0.0/libdoc/benchmark/rdoc/Benchmark.html)이 존재합니다.
 
-# 2. 벤치마크 모듈 사용하기
+## 2. 벤치마크 모듈 사용하기
 벤치마크 모듈을 이용해서 위 예시를 아래와 같이 구현할 수 있습니다.
 
 ``` ruby  
@@ -61,7 +61,8 @@ upto:    1.500000   0.016667   1.516667 (  0.711239)
 ```
 이외에도 벤치마크를 두 번 돌려서 garbage collection 등이 코드에 주는 영향을 최소화하는 `bmbm`이라는 method도 있으니 참고하시기 바랍니다.
 
-# 3. 더 읽을만한 글
+## 3. 더 읽을만한 글  
+
 1. <a>http://www.skorks.com/2010/03/timing-ruby-code-it-is-easy-with-benchmark/</a>  
 2. <a>http://stackoverflow.com/questions/1616269/ruby-benchmark-module-meanings-of-user-system-and-real</a>  
 3. <a>https://gist.github.com/anildigital/1229896</a>
