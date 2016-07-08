@@ -57,7 +57,3 @@ title: '[조직을 망치는 회의] 회의 소집하기 Part 2'
 <hr style="border-width: 2px;"/>
 
 이번 포스트에서는 **회의 시간**을 정하는 방법과 **회의를 공지하는 방법**을 알아봤습니다. 다음 글에서는 **회의 진행**을 다루어 보겠습니다.  
-
-<!-- <h4 style="border-bottom: 0px; text-align: center;" markdown="1">
-[다음 글 보러가기]({% post_url 2016-07-09-bad-meetings-2 %})
-</h4> -->
