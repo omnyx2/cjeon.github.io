@@ -2,7 +2,7 @@ language: ruby
 sudo: false
 cache: bundler
 rvm:
-- 2.2
+- 2.3.1
 before_install:
 - gem update --system
 - gem update --remote bundler
@@ -11,7 +11,7 @@ before_script:
 - git config --global user.name "$(git --no-pager show --no-patch --format='%an')"
 - git config --global user.email "$(git --no-pager show --no-patch --format='%ae')"
 script:
-  - bundle exec jekyll build
+  - bundle exec jekyll build -t
 after_success:
   - ls -al
   - git add -A
