@@ -11,6 +11,7 @@ before_script:
 - git config --global user.name "$(git --no-pager show --no-patch --format='%an')"
 - git config --global user.email "$(git --no-pager show --no-patch --format='%ae')"
 - ls -R
+- date
 script:
   - bundle exec jekyll build -t
 after_success:
